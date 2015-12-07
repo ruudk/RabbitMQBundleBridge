@@ -3,10 +3,11 @@
 namespace SimpleBus\RabbitMQBundleBridge;
 
 use OldSound\RabbitMqBundle\RabbitMq\Producer;
+use OldSound\RabbitMqBundle\RabbitMq\Fallback;
+use SimpleBus\Asynchronous\Properties\AdditionalPropertiesResolver;
 use SimpleBus\Asynchronous\Publisher\Publisher;
 use SimpleBus\Asynchronous\Routing\RoutingKeyResolver;
 use SimpleBus\Serialization\Envelope\Serializer\MessageInEnvelopSerializer;
-use SimpleBus\Message\Message;
 
 class RabbitMQPublisher implements Publisher
 {
@@ -16,7 +17,7 @@ class RabbitMQPublisher implements Publisher
     private $serializer;
 
     /**
-     * @var Producer
+     * @var Producer|Fallback
      */
     private $producer;
 
@@ -25,14 +26,26 @@ class RabbitMQPublisher implements Publisher
      */
     private $routingKeyResolver;
 
+    /**
+     * @var AdditionalPropertiesResolver
+     */
+    private $additionalPropertiesResolver;
+
     public function __construct(
         MessageInEnvelopSerializer $messageSerializer,
-        Producer $producer,
-        RoutingKeyResolver $routingKeyResolver
+        $producer,
+        RoutingKeyResolver $routingKeyResolver,
+        AdditionalPropertiesResolver $additionalPropertiesResolver
     ) {
+        if(!$producer instanceof Producer && !$producer instanceof Fallback)
+        {
+            throw new \LogicException('Producer must be an instance of OldSound\RabbitMqBundle\RabbitMq\Producer or OldSound\RabbitMqBundle\RabbitMq\Fallback');
+        }
+
         $this->serializer = $messageSerializer;
         $this->producer = $producer;
         $this->routingKeyResolver = $routingKeyResolver;
+        $this->additionalPropertiesResolver = $additionalPropertiesResolver;
     }
 
     /**
@@ -40,11 +53,12 @@ class RabbitMQPublisher implements Publisher
      *
      * @{inheritdoc}
      */
-    public function publish(Message $message)
+    public function publish($message)
     {
         $serializedMessage = $this->serializer->wrapAndSerialize($message);
         $routingKey = $this->routingKeyResolver->resolveRoutingKeyFor($message);
+        $additionalProperties = $this->additionalPropertiesResolver->resolveAdditionalPropertiesFor($message);
 
-        $this->producer->publish($serializedMessage, $routingKey);
+        $this->producer->publish($serializedMessage, $routingKey, $additionalProperties);
     }
 }

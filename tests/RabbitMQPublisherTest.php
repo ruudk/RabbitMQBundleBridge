@@ -2,7 +2,6 @@
 
 namespace SimpleBus\RabbitMQBundleBridge\Tests;
 
-use SimpleBus\Message\Message;
 use SimpleBus\RabbitMQBundleBridge\RabbitMQPublisher;
 
 class RabbitMQPublisherTest extends \PHPUnit_Framework_TestCase
@@ -30,7 +29,9 @@ class RabbitMQPublisherTest extends \PHPUnit_Framework_TestCase
 
         $routingKeyResolver = $this->routingKeyResolverStub($message, $routingKey);
 
-        $publisher = new RabbitMQPublisher($serializer, $producer, $routingKeyResolver);
+        $additionalPropertiesResolver = $this->additionalPropertiesResolverStub($message, []);
+
+        $publisher = new RabbitMQPublisher($serializer, $producer, $routingKeyResolver, $additionalPropertiesResolver);
 
         $publisher->publish($message);
     }
@@ -50,10 +51,10 @@ class RabbitMQPublisherTest extends \PHPUnit_Framework_TestCase
 
     private function dummyMessage()
     {
-        return $this->getMock('SimpleBus\Message\Message');
+        return new \stdClass();
     }
 
-    private function routingKeyResolverStub(Message $message, $routingKey)
+    private function routingKeyResolverStub($message, $routingKey)
     {
         $resolver = $this->getMock('SimpleBus\Asynchronous\Routing\RoutingKeyResolver');
         $resolver
@@ -61,6 +62,18 @@ class RabbitMQPublisherTest extends \PHPUnit_Framework_TestCase
             ->method('resolveRoutingKeyFor')
             ->with($this->identicalTo($message))
             ->will($this->returnValue($routingKey));
+
+        return $resolver;
+    }
+
+    private function additionalPropertiesResolverStub($message, $additionalProperties)
+    {
+        $resolver = $this->getMock('SimpleBus\Asynchronous\Properties\AdditionalPropertiesResolver');
+        $resolver
+            ->expects($this->any())
+            ->method('resolveAdditionalPropertiesFor')
+            ->with($this->identicalTo($message))
+            ->will($this->returnValue($additionalProperties));
 
         return $resolver;
     }

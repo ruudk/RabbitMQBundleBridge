@@ -1,6 +1,6 @@
 title: SimpleBus/RabbitMQBundleBridge
 subTitle: Use OldSoundRabbitMQBundle with SimpleBus/AsynchronousBundle
-baseUrl: http://simplebus.github.io/RabbitMQBundleBridge
+baseUrl: //simplebus.github.io/RabbitMQBundleBridge
 menu:
     items:
         home:
@@ -19,3 +19,7 @@ menu:
             itemId: routing
             text: Routing
             relativeUrl: "doc/routing.html"
+        additional_properties:
+            itemId: additional_properties
+            text: Additional properties
+            relativeUrl: "doc/additional_properties.html"
